@@ -35,3 +35,45 @@ jobs:
           name: test-results
           path: test-results/
           if-no-files-found: warn
+  deploy:
+    name: Deploy on self-hosted runner
+    needs: test
+    runs-on: [self-hosted, windows, nodejs]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download test results artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+          path: test-results
+
+      - name: Show test artifact content
+        shell: pwsh
+        run: |
+          Write-Host "==== test-results/test-output.txt ===="
+          Get-Content -Path "test-results/test-output.txt" -Raw | Write-Host
+
+      - name: Setup Node.js (ensure version)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        shell: pwsh
+        run: npm ci
+
+      # Simple deploy: start the app detached so it keeps running after the job
+      - name: Deploy (start app)
+        shell: pwsh
+        run: |
+          # stop any previous instance on port 3000 (best-effort)
+           = 3000
+           = (Get-NetTCPConnection -LocalPort  -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique) 2>
+          if () { foreach (21616 in ) { try { Stop-Process -Id 21616 -Force } catch {} } }
+
+          # start the app detached
+          Start-Process -FilePath "npm" -ArgumentList "start" -WindowStyle Hidden
