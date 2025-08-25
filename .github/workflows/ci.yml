@@ -10,7 +10,6 @@ jobs:
   test:
     name: Run tests and upload results
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,11 +34,11 @@ jobs:
           name: test-results
           path: test-results/
           if-no-files-found: warn
+
   deploy:
     name: Deploy on self-hosted runner
     needs: test
     runs-on: [self-hosted, windows, nodejs]
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -66,14 +65,18 @@ jobs:
         shell: pwsh
         run: npm ci
 
-      # Simple deploy: start the app detached so it keeps running after the job
       - name: Deploy (start app)
         shell: pwsh
         run: |
           # stop any previous instance on port 3000 (best-effort)
            = 3000
-           = (Get-NetTCPConnection -LocalPort  -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique) 2>
-          if () { foreach (21616 in ) { try { Stop-Process -Id 21616 -Force } catch {} } }
+          try {
+             = (Get-NetTCPConnection -LocalPort  -ErrorAction Stop |
+                     Select-Object -ExpandProperty OwningProcess -Unique)
+            foreach (21616 in ) {
+              try { Stop-Process -Id 21616 -Force -ErrorAction SilentlyContinue } catch {}
+            }
+          } catch {}
 
           # start the app detached
           Start-Process -FilePath "npm" -ArgumentList "start" -WindowStyle Hidden
