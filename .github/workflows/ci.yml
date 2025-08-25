@@ -69,12 +69,12 @@ jobs:
         shell: pwsh
         run: |
           # stop any previous instance on port 3000 (best-effort)
-           = 3000
+          $port = 3000
           try {
-             = (Get-NetTCPConnection -LocalPort  -ErrorAction Stop |
-                     Select-Object -ExpandProperty OwningProcess -Unique)
-            foreach (21616 in ) {
-              try { Stop-Process -Id 21616 -Force -ErrorAction SilentlyContinue } catch {}
+            $procs = (Get-NetTCPConnection -LocalPort $port -ErrorAction Stop |
+                      Select-Object -ExpandProperty OwningProcess -Unique)
+            foreach ($proc in $procs) {
+              try { Stop-Process -Id $proc -Force -ErrorAction SilentlyContinue } catch {}
             }
           } catch {}
 
